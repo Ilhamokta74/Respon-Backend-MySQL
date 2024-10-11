@@ -39,56 +39,33 @@ const hapus = async (req, res) => {
     }
 };
 
-// const hapusAll = async (req, res) => {
-//     try {
-//         const { puskesmasId } = req.query
-//         const { data, error } = await supabase
-//             .from('dokter')
-//             .delete()
-//             .eq('puskesmasId', puskesmasId)
-//         if (error) {
-//             return res.json(error)
-//         }
+const list = async (req, res) => {
+    const queriDokter = `SELECT * FROM dokter`;
 
-//         res.json(data)
-//     } catch (error) {
-//         return res.json(error)
-//     }
-// }
+    try {
+        connection.query(queriDokter, (Error, result) => {
+            if (Error) {
+                return res.status(500).json({
+                    statusCode: 500,
+                    status: "Error",
+                    message: "Gagal mengambil data Dokter",
+                });
+            }
 
-// const list = async (req, res) => {
-//     try {
-//         // const {puskesmasId} = req.query
-//         const { data, error } = await supabase
-//             .from('dokter')
-//             .select('*')
-//         // .eq('puskesmasId', puskesmasId)
-//         if (error) {
-//             return res.json(error)
-//         }
-
-//         res.json(data)
-//     } catch (error) {
-//         return res.json(error)
-//     }
-// }
-
-// const listInti = async (req, res) => {
-//     try {
-//         const { id } = req.query
-//         const { data, error } = await supabase
-//             .from('dokter')
-//             .select('*')
-//             .eq('id', id)
-//         if (error) {
-//             return res.json(error)
-//         }
-
-//         res.json(data)
-//     } catch (error) {
-//         return res.json(error)
-//     }
-// }
+            res.json({
+                statusCode: 200,
+                status: "Success",
+                data: result
+            });
+        });
+    } catch (Error) {
+        return res.status(500).json({
+            statusCode: 500,
+            status: "Error",
+            message: "Terjadi kesalahan pada server.",
+        });
+    }
+}
 
 const add = async (req, res) => {
     const puskesmasId = req.query.puskesmasId;
@@ -190,6 +167,40 @@ const update = async (req, res) => {
     }
 }
 
+// const hapusAll = async (req, res) => {
+//     try {
+//         const { puskesmasId } = req.query
+//         const { data, error } = await supabase
+//             .from('dokter')
+//             .delete()
+//             .eq('puskesmasId', puskesmasId)
+//         if (error) {
+//             return res.json(error)
+//         }
+
+//         res.json(data)
+//     } catch (error) {
+//         return res.json(error)
+//     }
+// }
+
+// const listInti = async (req, res) => {
+//     try {
+//         const { id } = req.query
+//         const { data, error } = await supabase
+//             .from('dokter')
+//             .select('*')
+//             .eq('id', id)
+//         if (error) {
+//             return res.json(error)
+//         }
+
+//         res.json(data)
+//     } catch (error) {
+//         return res.json(error)
+//     }
+// }
+
 module.exports = {
-    add, hapus, update, // hapusAll, list, listInti,
+    add, hapus, update, list, // hapusAll, listInti,
 }

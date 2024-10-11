@@ -3,31 +3,62 @@ const connection = require(`./Connection/connection`)
 const add = async (req, res) => {
     const { namaPuskesmas, alamatPuskesmas, noTelepon, maps, region } = req.body;
 
-    const queriPuskesmas = `INSERT INTO puskesmas (id, namaPuskesmas, alamatPuskesmas, noTelepon, maps, region )
-        VALUES (NULL, "${namaPuskesmas}", "${alamatPuskesmas}", ${noTelepon}, "${maps}", "${region}");
-    `;
+    // Validasi: Pastikan semua field terisi
+    if (!namaPuskesmas || !alamatPuskesmas || !noTelepon || !maps || !region) {
+        return res.status(400).json({
+            statusCode: 400,
+            status: "Error",
+            message: "All fields must be filled.", // Pesan error dalam bahasa Inggris
+        });
+    }
+
+    // Validasi: Nomor telepon harus berupa angka
+    if (isNaN(noTelepon)) {
+        return res.status(400).json({
+            statusCode: 400,
+            status: "Error",
+            message: "Phone number must be a number.", // Pesan error dalam bahasa Inggris
+        });
+    }
+
+    // Query untuk menambahkan data Puskesmas ke database
+    const queriAddPuskesmas = `INSERT INTO puskesmas (id, namaPuskesmas, alamatPuskesmas, noTelepon, maps, region)
+        VALUES (NULL, "${namaPuskesmas}", "${alamatPuskesmas}", ${noTelepon}, "${maps}", "${region}");`;
 
     try {
-        connection.query(queriPuskesmas, (Error, results1) => {
+        // Eksekusi query untuk menambahkan data ke database
+        connection.query(queriAddPuskesmas, (Error, results) => {
+            // Jika terjadi kesalahan saat query
             if (Error) {
                 return res.status(500).json({
                     statusCode: 500,
                     status: "Error",
-                    message: "Gagal Tambah data Puskesmas",
+                    message: "Failed to add Puskesmas data.", // Pesan error dalam bahasa Inggris
                 });
             }
 
+            // Jika berhasil, kembalikan respons sukses dengan data yang ditambahkan
             res.json({
                 statusCode: 200,
                 status: "Success",
-                message: "Data Puskesmas berhasil ditambahkan",
+                message: "Puskesmas data added successfully.", // Pesan sukses dalam bahasa Inggris
+                Data: [
+                    {
+                        "namaPuskesmas": namaPuskesmas,
+                        "alamatPuskesmas": alamatPuskesmas,
+                        "noTelepon": noTelepon,
+                        "maps": maps,
+                        "region": region,
+                    }
+                ]
             });
         });
     } catch (Error) {
+        // Jika terjadi kesalahan server
         return res.status(500).json({
             statusCode: 500,
             status: "Error",
-            message: "Terjadi kesalahan pada server.",
+            message: "Server error occurred.", // Pesan error dalam bahasa Inggris
         });
     }
 };
@@ -35,40 +66,63 @@ const add = async (req, res) => {
 const hapus = async (req, res) => {
     const id = req.query.id;
 
-    const queriPuskesmas = `DELETE FROM puskesmas WHERE id = ${id}`;
-    const queriDokter = `DELETE FROM dokter WHERE puskesmasId = ${id}`;
+    // Validasi: Pastikan ID disediakan dan berupa angka
+    if (!id || isNaN(id)) {
+        return res.status(400).json({
+            statusCode: 400,
+            status: "Error",
+            message: "Invalid Puskesmas ID",
+        });
+    }
+
+    // Query untuk menghapus data dari tabel dokter dan puskesmas
+    const queriPuskesmas = `DELETE FROM puskesmas WHERE id = ?`;
+    const queriDokter = `DELETE FROM dokter WHERE puskesmasId = ?`;
 
     try {
-        connection.query(queriDokter, (error, results1) => {
-            connection.query(queriPuskesmas, (error, results1) => {
+        // Hapus data dokter terkait puskesmas
+        connection.query(queriDokter, [id], (error, results) => {
+            if (error) {
+                return res.status(500).json({
+                    statusCode: 500,
+                    status: "Error",
+                    message: "Failed to delete related doctor data.", // Pesan error penghapusan dokter
+                });
+            }
+
+            // Hapus data puskesmas
+            connection.query(queriPuskesmas, [id], (error, results1) => {
                 if (error) {
                     return res.status(500).json({
                         statusCode: 500,
-                        status: "error",
-                        message: "Gagal Hapus data Puskesmas",
+                        status: "Error",
+                        message: "Failed to delete Puskesmas data.", // Pesan error penghapusan puskesmas
                     });
                 }
-    
+
+                // Cek apakah ada data yang dihapus
                 if (results1.affectedRows === 0) {
                     return res.status(404).json({
                         statusCode: 404,
                         status: "Error",
-                        message: "Data Puskesmas tidak ditemukan",
+                        message: "Puskesmas data not found.", // Pesan jika data tidak ditemukan
                     });
                 }
-    
+
+                // Respons sukses jika data berhasil dihapus
                 res.json({
                     statusCode: 200,
-                    status: "success",
-                    data: "Data Puskesmas berhasil Hapus"
+                    status: "Success",
+                    message: "Puskesmas data deleted successfully.", // Pesan sukses
                 });
             });
         });
     } catch (error) {
+        // Handling error server
         return res.status(500).json({
             statusCode: 500,
-            status: "error",
-            message: "Terjadi kesalahan pada server.",
+            status: "Error",
+            message: "Server error occurred.", // Pesan error server
         });
     }
 };
@@ -129,6 +183,15 @@ const list = async (req, res) => {
 const search = async (req, res) => {
     const namaPuskesmas = req.body;
 
+    // Validasi: Pastikan namaPuskesmas tidak kosong
+    if (namaPuskesmas === "") {
+        return res.status(400).json({
+            statusCode: 400,
+            status: "Error",
+            message: "Nama Puskesmas harus diisi.",
+        });
+    }
+
     const queriPuskesmas = `SELECT * FROM puskesmas WHERE namaPuskesmas LIKE "%${namaPuskesmas.namaPuskesmas}%"`;
     const queriDokter = `SELECT * FROM dokter`;
 
@@ -172,10 +235,10 @@ const search = async (req, res) => {
                         data: datas
                     });
                 } else {
-                    res.json({
-                        statusCode: 200,
-                        status: "Success",
-                        data: "Tidak Ada Data Yang Ditemukan"
+                    return res.status(404).json({
+                        statusCode: 404,
+                        status: "Error",
+                        message: "Tidak ada data yang ditemukan" // Pesan lebih jelas
                     });
                 }
             });
@@ -193,6 +256,24 @@ const update = async (req, res) => {
     const id = req.query.id;
     const { namaPuskesmas, alamatPuskesmas, noTelepon, maps, region } = req.body;
 
+     // Validasi input: Pastikan semua field terisi dan valid
+     if (!namaPuskesmas || !alamatPuskesmas || !noTelepon || !maps || !region) {
+        return res.status(400).json({
+            statusCode: 400,
+            status: "Error",
+            message: "Semua field wajib diisi",
+        });
+    }
+
+    // Validasi: noTelepon harus angka
+    if (isNaN(noTelepon)) {
+        return res.status(400).json({
+            statusCode: 400,
+            status: "Error",
+            message: "Nomor telepon harus berupa angka",
+        });
+    }
+
     const queriPuskesmas = `UPDATE puskesmas
         SET namaPuskesmas = "${namaPuskesmas}", 
         alamatPuskesmas = "${alamatPuskesmas}",
@@ -209,6 +290,14 @@ const update = async (req, res) => {
                     statusCode: 500,
                     status: "Error",
                     message: "Gagal Update data Puskesmas",
+                });
+            }
+
+            if (results1.affectedRows === 0) {
+                return res.status(404).json({
+                    statusCode: 404,
+                    status: "Error",
+                    message: "Puskesmas data not found.", // Data tidak ditemukan
                 });
             }
 

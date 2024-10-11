@@ -7,6 +7,15 @@ const { accessToken } = require(`./middleware/authorization`)
 const add = async (req, res) => {
     const { nama, username, email, password } = req.body;
 
+    // Validasi input
+    if (!nama || !username || !email || !password) {
+        return res.status(400).json({
+            statusCode: 400,
+            status: "Error",
+            message: "Semua field harus diisi",
+        });
+    }
+
     const uuid = uuidv4();
     const passwordHash = await hashPassword(password)
 
@@ -17,21 +26,18 @@ const add = async (req, res) => {
     console.log(queriAccount);
     try {
         connection.query(queriAccount, (Error, results1) => {
-            // if (Error.sqlMessage.includes('Duplicate')) {
-            //     return res.status(500).json({
-            //         statusCode: 500,
-            //         status: "Error",
-            //         message: "Email dan Username Telah Digunakan",
-            //         data: results1
-            //     });
-            // }
-
             if (Error) {
+                if (Error.sqlMessage.includes('Duplicate')) {
+                    return res.status(409).json({
+                        statusCode: 409,
+                        status: "Error",
+                        message: "Email atau Username sudah digunakan",
+                    });
+                }
                 return res.status(500).json({
                     statusCode: 500,
                     status: "Error",
-                    message: "Gagal Tambah data Account",
-                    data: results1
+                    message: "Gagal menambah akun",
                 });
             }
 
@@ -51,73 +57,39 @@ const add = async (req, res) => {
 };
 
 const hapus = async (req, res) => {
+    const uuid = req.query.uuid;
+
+    const queriDeleteAccount = `DELETE FROM account WHERE uuid = "${uuid}"`;
+
     try {
-        const { email } = req.body;
-
-        // Check if token exists in headers
-        const token = req.headers.authorization;
-        if (!token) {
-            return res.status(401).json({
-                status: "error",
-                message: "Tidak diizinkan. Token tidak ditemukan."
-            });
-        }
-
-        // Verify the token
-        jwt.verify(token, 'secretKey', async (err, decoded) => {
-            if (err) {
-                return res.status(401).json({
-                    status: "error",
-                    message: "Tidak diizinkan. Token tidak valid."
-                });
-            }
-
-            // Token valid, continue with deletion
-            try {
-                // Check if data exists
-                const { data: existingAdmin, error: existingError } = await supabase
-                    .from('Admin')
-                    .select('*')
-                    .eq('email', email)
-                    .single();
-
-                if (!existingAdmin) {
-                    return res.status(404).json({
-                        status: "error",
-                        message: "Data tidak ditemukan."
-                    });
-                }
-
-                // Delete data
-                const { data, error } = await supabase
-                    .from('Admin')
-                    .delete()
-                    .eq('email', email);
-
-                if (error) {
-                    return res.status(500).json({
-                        status: "error",
-                        message: "Gagal menghapus data. Silakan coba lagi."
-                    });
-                }
-
-                res.json({
-                    status: "success",
-                    message: "Data berhasil dihapus."
-                });
-
-            } catch (error) {
+        connection.query(queriDeleteAccount, (error, results1) => {
+            if (error) {
                 return res.status(500).json({
+                    statusCode: 500,
                     status: "error",
-                    message: "Terjadi kesalahan pada server."
+                    message: "Gagal Hapus data",
                 });
             }
-        });
 
+            if (results1.affectedRows === 0) {
+                return res.status(404).json({
+                    statusCode: 404,
+                    status: "Error",
+                    message: "Data tidak ditemukan",
+                });
+            }
+
+            res.json({
+                statusCode: 200,
+                status: "success",
+                data: "Data berhasil Hapus"
+            });
+        });
     } catch (error) {
         return res.status(500).json({
+            statusCode: 500,
             status: "error",
-            message: "Terjadi kesalahan pada server."
+            message: "Terjadi kesalahan pada server.",
         });
     }
 };
@@ -151,82 +123,72 @@ const list = async (req, res) => {
 };
 
 const update = async (req, res) => {
+    const uuid = req.query.uuid;
+    const { nama, username, email, password } = req.body;
+
+    const queriUpdateAccount = `UPDATE account
+        SET nama = "${nama}", 
+        username = "${username}",
+        email = "${email}",
+        password = "${password}"
+        WHERE uuid = "${uuid}";
+    `;
+
+    // Jika password di-update, hash ulang password
+    if (password) {
+        const passwordHash = await hashPassword(password);
+        queriUpdateAccount = `UPDATE account
+                SET nama = "${nama}", 
+                username = "${username}",
+                email = "${email}",
+                password = "${passwordHash}"
+                WHERE uuid = "${uuid}";`;
+    }
+
     try {
-        // Check if token exists in headers
-        const token = req.headers.authorization;
-        if (!token) {
-            return res.status(401).json({
-                status: "error",
-                message: "Tidak diizinkan. Token tidak ditemukan."
-            });
-        }
-
-        // Verify the token
-        jwt.verify(token, 'secretKey', async (err, decoded) => {
-            if (err) {
-                return res.status(401).json({
-                    status: "error",
-                    message: "Tidak diizinkan. Token tidak valid."
-                });
-            }
-
-            // Token valid, continue with deletion
-            try {
-                const { nama, username, email, password } = req.body;
-
-                // Check if the data with the given email exists
-                const { data: existingAdmin, error: existingError } = await supabase
-                    .from('Admin')
-                    .select('*')
-                    .eq('email', email)
-                    .single();
-
-                if (!existingAdmin) {
-                    return res.status(404).json({
-                        status: "error",
-                        message: "Data tidak ditemukan."
-                    });
-                }
-
-                // Hash new password
-                const hashedPassword = await bcrypt.hash(password, 10);
-
-                // Perform update operation
-                const { data: updatedData, error: updateError } = await supabase
-                    .from('Admin')
-                    .update({ nama, username, password: hashedPassword, updatedAt: new Date().toISOString() })
-                    .eq('email', email);
-
-                if (updateError) {
-                    return res.status(500).json({
-                        status: "error",
-                        message: "Gagal melakukan pembaruan data. Silakan coba lagi."
-                    });
-                }
-
-                res.json({
-                    status: "success",
-                    message: "Data berhasil diperbarui.",
-                    updatedData
-                });
-            } catch (error) {
+        connection.query(queriUpdateAccount, (Error, results1) => {
+            if (Error) {
                 return res.status(500).json({
-                    status: "error",
-                    message: "Terjadi kesalahan pada server."
+                    statusCode: 500,
+                    status: "Error",
+                    message: "Gagal Update data",
+                    error: Error
                 });
             }
-        });
 
-    } catch (error) {
+            if (results1.affectedRows === 0) {
+                return res.status(404).json({
+                    statusCode: 404,
+                    status: "error",
+                    message: "Data tidak ditemukan",
+                });
+            }
+
+            res.json({
+                statusCode: 200,
+                status: "Success",
+                data: "Data berhasil diperbarui"
+            });
+        });
+    } catch (Error) {
         return res.status(500).json({
-            status: "error",
-            message: "Terjadi kesalahan pada server."
+            statusCode: 500,
+            status: "Error",
+            message: "Terjadi kesalahan pada server.",
         });
     }
 };
 
 const login = async (req, res) => {
     const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({
+            statusCode: 400,
+            status: "Error",
+            message: "Email dan password harus diisi",
+        });
+    }
 
     const queriAccount = `SELECT * FROM account WHERE email="${email}"`;
 
@@ -236,7 +198,15 @@ const login = async (req, res) => {
                 return res.status(500).json({
                     statusCode: 500,
                     status: "Error",
-                    message: "Gagal mengambil data Dokter",
+                    message: "Gagal mengambil data Account",
+                });
+            }
+
+            if (results.length === 0) {
+                return res.status(404).json({
+                    statusCode: 404,
+                    status: "Error",
+                    message: "Akun tidak ditemukan",
                 });
             }
 
@@ -251,6 +221,12 @@ const login = async (req, res) => {
                     status: "Success",
                     accessToken: token,
                     expiresIn: 3600
+                });
+            } else {
+                return res.status(401).json({
+                    statusCode: 401,
+                    status: "Error",
+                    message: "Password salah",
                 });
             }
 
