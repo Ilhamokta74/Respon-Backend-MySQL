@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+<!-- JavaScript Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" 
+        integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+    <script src="./data/add.js"></script>
+    <title>Add</title>
+</head>
+
+<body>
+    <div class="container mt-5">
+        <h1>Tambah data</h1>
+            
+        <label for="tax">pembayaran</label>
+            <select name="tax" id="tax">
+                <option value="ovo">cash</option>
+                <option value="gopay">BPJS</option>
+            </select>
+        
+        <br> <br>
+        <label for="poli">poli</label>
+            <select name="poli" id="poli">
+                <option value="mata">mata</option>
+                <option value="anak">anak</option>
+                <option value="obgyn">obgyn</option>
+            </select>
+           
+        <br> <br>
+        <label for="date">jadwal</label>
+            <select name="date" id="date">
+                <option value="pagi">08:00 - 11:00</option>
+                <option value="siang">13:00 - 16:00</option>
+            </select>  
+        
+        <br> <br>
+
+        <input id="name" class="form-control mt-2" type="text" placeholder="Nama Pasien" required>
+        <input id="nik" class="form-control mt-2" type="text" placeholder="No. NIK" required>
+        <input id="address" class="form-control mt-2" type="text" placeholder="Alamat" required>
+        <input id="handphone" class="form-control mt-2" type="text" placeholder="No. Telepon" required>
+
+        <button id="add" class="btn btn-primary mt-3">tambah data</button>
+    </div>
+</body>
+
+</html>
