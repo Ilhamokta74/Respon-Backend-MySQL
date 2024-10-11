@@ -1,8 +1,8 @@
 const connection = require(`./Connection/connection`)
 const { v4: uuidv4 } = require('uuid');
-const jwt = require('jsonwebtoken');
 
-const { hashPassword, comparePasswords, accessToken } = require(`./middleware/middleware`)
+const { hashPassword, comparePasswords } = require(`./middleware/authentication`)
+const { accessToken } = require(`./middleware/authorization`)
 
 const add = async (req, res) => {
     const { nama, username, email, password } = req.body;
@@ -243,13 +243,14 @@ const login = async (req, res) => {
             const cekPassword = await comparePasswords(password, results[0].password)
 
             // Membuat token
-            const token = jwt.sign(results[0].email, results[0].password);
+            const token = accessToken(results[0].email);
 
             if (cekPassword) {
                 res.json({
                     statusCode: 200,
                     status: "Success",
-                    accessToken: token
+                    accessToken: token,
+                    expiresIn: 3600
                 });
             }
 

@@ -37,25 +37,4 @@ const comparePasswords = async (plainTextPassword, hashedPassword) => {
     }
 };
 
-const accessToken = (email, password) => {
-    // Kunci rahasia untuk menandatangani token
-    const secretKey = 'your_secret_key';
-
-    // Data yang ingin disertakan dalam payload
-    const payload = {
-        email: email, // ID pengguna
-        password: password // Nama pengguna
-    };
-
-    // Opsi token
-    const options = {
-        expiresIn: '1d' // Token kedaluwarsa dalam 1 hari
-    };
-
-    // Membuat token
-    const token = jwt.sign(payload, secretKey, options);
-
-    return token;
-}
-
-module.exports = { hashPassword, comparePasswords, accessToken };
+module.exports = { hashPassword, comparePasswords };
