@@ -23,7 +23,6 @@ const add = async (req, res) => {
         VALUES ("${uuid}", "${nama}", "${username}", "${email}", "${passwordHash}");
     `;
 
-    console.log(queriAccount);
     try {
         connection.query(queriAccount, (Error, results1) => {
             if (Error) {
