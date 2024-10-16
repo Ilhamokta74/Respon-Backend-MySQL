@@ -19,8 +19,11 @@ const add = async (req, res) => {
     const uuid = uuidv4();
     const passwordHash = await hashPassword(password)
 
-    const queriAccount = `INSERT INTO account (uuid, nama, username, email, password )
-        VALUES ("${uuid}", "${nama}", "${username}", "${email}", "${passwordHash}");
+    const created_at = new Date().toISOString().slice(0, 19).replace('T', ' '); // Format date
+    const updated_at = new Date().toISOString().slice(0, 19).replace('T', ' '); // Format date
+
+    const queriAccount = `INSERT INTO account (uuid, nama, username, email, password, created_at, updated_at )
+        VALUES ("${uuid}", "${nama}", "${username}", "${email}", "${passwordHash}", "${created_at}", "${updated_at}");
     `;
 
     try {
@@ -125,11 +128,14 @@ const update = async (req, res) => {
     const uuid = req.query.uuid;
     const { nama, username, email, password } = req.body;
 
+    const updated_at = new Date().toISOString().slice(0, 19).replace('T', ' '); // Format date
+
+    // Password Tidak Di Ganti
     const queriUpdateAccount = `UPDATE account
         SET nama = "${nama}", 
         username = "${username}",
         email = "${email}",
-        password = "${password}"
+        updated_at = "${updated_at}"
         WHERE uuid = "${uuid}";
     `;
 
@@ -141,7 +147,9 @@ const update = async (req, res) => {
                 username = "${username}",
                 email = "${email}",
                 password = "${passwordHash}"
-                WHERE uuid = "${uuid}";`;
+                updated_at = "${updated_at}"
+                WHERE uuid = "${uuid}";
+        `;
     }
 
     try {

@@ -12,7 +12,7 @@ const accessToken = (email, nama, username) => {
 
     // Token options
     const options = {
-        expiresIn: '1d' // Token expires in 1 hour
+        expiresIn: '1h' // Token expires in 1 hour
     };
 
     // Create the token

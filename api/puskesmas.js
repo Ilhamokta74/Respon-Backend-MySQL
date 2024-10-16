@@ -3,6 +3,8 @@ const connection = require(`./Connection/connection`)
 const add = async (req, res) => {
     const { namaPuskesmas, alamatPuskesmas, noTelepon, maps, region } = req.body;
 
+    let slug = namaPuskesmas;
+
     // Validasi: Pastikan semua field terisi
     if (!namaPuskesmas || !alamatPuskesmas || !noTelepon || !maps || !region) {
         return res.status(400).json({
@@ -11,6 +13,11 @@ const add = async (req, res) => {
             message: "All fields must be filled.", // Pesan error dalam bahasa Inggris
         });
     }
+
+    if (slug.includes(" ")) {
+        slug = slug.replace(/ /g, "-");
+    }
+
 
     // Validasi: Nomor telepon harus berupa angka
     if (isNaN(noTelepon)) {
@@ -21,9 +28,12 @@ const add = async (req, res) => {
         });
     }
 
+    const created_at = new Date().toISOString().slice(0, 19).replace('T', ' '); // Format date
+    const updated_at = new Date().toISOString().slice(0, 19).replace('T', ' '); // Format date
+
     // Query untuk menambahkan data Puskesmas ke database
-    const queriAddPuskesmas = `INSERT INTO puskesmas (id, namaPuskesmas, alamatPuskesmas, noTelepon, maps, region)
-        VALUES (NULL, "${namaPuskesmas}", "${alamatPuskesmas}", ${noTelepon}, "${maps}", "${region}");`;
+    const queriAddPuskesmas = `INSERT INTO puskesmas (id, namaPuskesmas, alamatPuskesmas, noTelepon, maps, region, slug, created_at, updated_at)
+        VALUES (NULL, "${namaPuskesmas}", "${alamatPuskesmas}", ${noTelepon}, "${maps}", "${region}", "${slug}", "${created_at}", "${updated_at}");`;
 
     try {
         // Eksekusi query untuk menambahkan data ke database
@@ -49,6 +59,9 @@ const add = async (req, res) => {
                         "noTelepon": noTelepon,
                         "maps": maps,
                         "region": region,
+                        "slug": slug,
+                        'created_at': created_at,
+                        'updated_at': updated_at
                     }
                 ]
             });
@@ -181,7 +194,7 @@ const list = async (req, res) => {
 };
 
 const search = async (req, res) => {
-    const namaPuskesmas = req.body;
+    const namaPuskesmas = req.query.puskesmas;
 
     // Validasi: Pastikan namaPuskesmas tidak kosong
     if (namaPuskesmas === "") {
@@ -192,7 +205,7 @@ const search = async (req, res) => {
         });
     }
 
-    const queriPuskesmas = `SELECT * FROM puskesmas WHERE namaPuskesmas LIKE "%${namaPuskesmas.namaPuskesmas}%"`;
+    const queriPuskesmas = `SELECT * FROM puskesmas WHERE namaPuskesmas LIKE "%${namaPuskesmas}%"`;
     const queriDokter = `SELECT * FROM dokter`;
 
     try {
@@ -252,12 +265,84 @@ const search = async (req, res) => {
     }
 };
 
+const listDetail = async (req, res) => {
+    const namaPuskesmas = req.query.puskesmas;
+
+    // Validasi: Pastikan namaPuskesmas tidak kosong
+    if (namaPuskesmas === "") {
+        return res.status(400).json({
+            statusCode: 400,
+            status: "Error",
+            message: "Nama Puskesmas harus diisi.",
+        });
+    }
+
+    const queriPuskesmas = `SELECT * FROM puskesmas WHERE slug = "${namaPuskesmas}"`;
+    const queriDokter = `SELECT * FROM dokter`;
+
+    try {
+        connection.query(queriPuskesmas, (Error, results1) => {
+            if (Error) {
+                return res.status(500).json({
+                    statusCode: 500,
+                    status: "Error",
+                    message: "Gagal mengambil data Puskesmas",
+                });
+            }
+
+            connection.query(queriDokter, (Error, results2) => {
+                if (Error) {
+                    return res.status(500).json({
+                        statusCode: 500,
+                        status: "Error",
+                        message: "Gagal mengambil data Dokter",
+                    });
+                }
+
+                let datas = [];
+                let datasDokter = [];
+
+                for (let i = 0; i < results1.length; i++) {
+                    datas.push(results1[i]);
+                    for (let j = 0; j < results2.length; j++) {
+                        if (results1[i].id == results2[j].puskesmasId) {
+                            datasDokter.push(results2[j])
+                        }
+                    }
+                    datas[i].dataDokter = datasDokter;
+                    datasDokter = [];
+                }
+
+                if (datas.length != 0) {
+                    res.json({
+                        statusCode: 200,
+                        status: "Success",
+                        data: datas
+                    });
+                } else {
+                    return res.status(404).json({
+                        statusCode: 404,
+                        status: "Error",
+                        message: "Tidak ada data yang ditemukan" // Pesan lebih jelas
+                    });
+                }
+            });
+        });
+    } catch (Error) {
+        return res.status(500).json({
+            statusCode: 500,
+            status: "Error",
+            message: "Terjadi kesalahan pada server.",
+        });
+    }
+}
+
 const update = async (req, res) => {
     const id = req.query.id;
     const { namaPuskesmas, alamatPuskesmas, noTelepon, maps, region } = req.body;
 
-     // Validasi input: Pastikan semua field terisi dan valid
-     if (!namaPuskesmas || !alamatPuskesmas || !noTelepon || !maps || !region) {
+    // Validasi input: Pastikan semua field terisi dan valid
+    if (!namaPuskesmas || !alamatPuskesmas || !noTelepon || !maps || !region) {
         return res.status(400).json({
             statusCode: 400,
             status: "Error",
@@ -274,12 +359,15 @@ const update = async (req, res) => {
         });
     }
 
+    const updated_at = new Date().toISOString().slice(0, 19).replace('T', ' '); // Format date
+
     const queriPuskesmas = `UPDATE puskesmas
         SET namaPuskesmas = "${namaPuskesmas}", 
         alamatPuskesmas = "${alamatPuskesmas}",
         noTelepon = ${noTelepon},
         maps = "${maps}",
-        region = "${region}"
+        region = "${region}",
+        updated_at = "${updated_at}"
         WHERE id = ${id};
     `;
 
@@ -317,5 +405,5 @@ const update = async (req, res) => {
 };
 
 module.exports = {
-    add, hapus, list, search, update
+    add, hapus, list, listDetail, search, update
 }

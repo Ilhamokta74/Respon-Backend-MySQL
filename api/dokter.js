@@ -73,8 +73,11 @@ const add = async (req, res) => {
 
     const uuid = uuidv4();
 
-    const queriDokter = `INSERT INTO dokter (uuid, namaDokter, poli, jamPraktek, jadwalPraktek, puskesmasId )
-        VALUES ("${uuid}", "${namaDokter}", "${poli}", "${jamPraktek}", "${jadwalPraktek}", ${puskesmasId});
+    const created_at = new Date().toISOString().slice(0, 19).replace('T', ' '); // Format date
+    const updated_at = new Date().toISOString().slice(0, 19).replace('T', ' '); // Format date
+
+    const queriDokter = `INSERT INTO dokter (uuid, namaDokter, poli, jamPraktek, jadwalPraktek, puskesmasId, created_at, updated_at )
+        VALUES ("${uuid}", "${namaDokter}", "${poli}", "${jamPraktek}", "${jadwalPraktek}", ${puskesmasId} "${created_at}", "${updated_at}");
     `;
 
     const queriPuskesmas = `SELECT id FROM puskesmas WHERE id=${puskesmasId}`
@@ -126,11 +129,14 @@ const update = async (req, res) => {
     const uuid = req.query.uuid;
     const { namaDokter, poli, jamPraktek, jadwalPraktek } = req.body;
 
+    const updated_at = new Date().toISOString().slice(0, 19).replace('T', ' '); // Format date
+
     const queriDokter = `UPDATE dokter
         SET namaDokter = "${namaDokter}", 
         poli = "${poli}",
         jamPraktek = "${jamPraktek}",
-        jadwalPraktek = "${jadwalPraktek}"
+        jadwalPraktek = "${jadwalPraktek}",
+        updated_at = '${updated_at}',
         WHERE uuid = "${uuid}";
     `;
 

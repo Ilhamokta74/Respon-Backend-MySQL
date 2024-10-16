@@ -19,6 +19,7 @@ router.get('/', (req, res) => {
 
 // PUSKESMAS
 router.get('/puskesmas/list', puskesmas.list)
+router.get('/puskesmas/list-detail', puskesmas.listDetail)
 router.get(`/puskesmas/search`, puskesmas.search)
 router.post('/puskesmas/add', authenticateToken, puskesmas.add)
 router.put('/puskesmas/update', authenticateToken, puskesmas.update)

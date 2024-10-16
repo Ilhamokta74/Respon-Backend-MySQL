@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon index",
+    "migrate": "node ./migration/migrate",
     "build": "node index.js"
   },
   "keywords": [],
@@ -13,6 +14,7 @@
   "license": "ISC",
   "dependencies": {
     "@supabase/supabase-js": "^1.35.3",
+    "axios": "^1.7.7",
     "bcrypt": "^5.0.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
@@ -22,6 +24,7 @@
     "mysql2": "^3.11.3",
     "nanoid": "^3.3.6",
     "nodemon": "^2.0.16",
+    "sequelize": "^6.37.4",
     "uuid": "^10.0.0"
   }
 }

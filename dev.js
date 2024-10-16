@@ -1,34 +1,16 @@
-let data = {
-    "status": "success",
-    "data": [
-        {
-            "id": 1,
-            "namaPuskesmas": "test",
-            "alamatPuskesmas": "test",
-            "noTelepon": 1211,
-            "maps": "test",
-            "region": "test"
-        },
-        {
-            "id": 2,
-            "namaPuskesmas": "test",
-            "alamatPuskesmas": "test",
-            "noTelepon": 1211,
-            "maps": "test",
-            "region": "test"
-        }
-    ]
-}
+const axios = require('axios');
 
-const newdata = {
-    "id": 2,
-    "Puskesmas": "test",
-    "alamatPuskesmas": "test",
-    "noTelepon": 1211,
-    "maps": "test",
-    "region": "test"
-}
+let config = {
+  method: 'get',
+  maxBodyLength: Infinity,
+  url: 'http://localhost:3000/puskesmas/list',
+  headers: { }
+};
 
-data.data[0].Dokter = newdata;
-
-console.log(data);
+axios.request(config)
+.then((response) => {
+  console.log(JSON.stringify(response.data));
+})
+.catch((error) => {
+  console.log(error);
+});
